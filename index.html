@@ -377,6 +377,29 @@ textarea.fi{resize:vertical;min-height:105px;font-size:12px;line-height:1.6;}
 .pin-desc{color:var(--tx2);}
 .pin-del{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:16px;line-height:1;padding:0 2px;flex-shrink:0;}
 .pin-del:hover{color:var(--danger);}
+
+/* ── アプリの更新（バージョン確認） ───────────────── */
+.hbtn.upd-new{background:#f59e0b;border-color:#fcd34d;color:#3d2600;font-weight:700;animation:updPulse 2.4s ease-in-out infinite;}
+.hbtn.upd-new:hover{background:#fbbf24;}
+.hbtn.upd-new.upd-imp{background:#dc2626;border-color:#fca5a5;color:#fff;animation-name:updPulseImp;}
+.hbtn.upd-new.upd-imp:hover{background:#ef4444;}
+@keyframes updPulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.75);}70%{box-shadow:0 0 0 7px rgba(251,191,36,0);}}
+@keyframes updPulseImp{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.75);}70%{box-shadow:0 0 0 7px rgba(248,113,113,0);}}
+@media (prefers-reduced-motion:reduce){.hbtn.upd-new{animation:none;}}
+.upd-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--tx2);}
+.upd-vchip{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--bd);color:var(--tx2);white-space:nowrap;}
+.upd-vchip.new{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
+.upd-arrow{color:var(--tx3);font-size:13px;}
+.upd-rel{border:1px solid var(--bd);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;background:var(--surface);}
+.upd-rel-h{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;}
+.upd-rel-v{font-size:13px;font-weight:700;color:var(--ac);}
+.upd-rel-d{font-size:11px;color:var(--tx3);}
+.upd-badge{font-size:10px;font-weight:700;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;border-radius:99px;padding:1px 7px;}
+.upd-list{margin:0;padding-left:17px;font-size:12px;line-height:1.75;color:var(--tx);}
+.upd-list li{margin-bottom:2px;}
+.upd-steps{font-size:12px;line-height:1.9;}
+.upd-link{background:none;border:none;color:var(--tx3);font-size:11px;font-family:inherit;cursor:pointer;text-decoration:underline;padding:4px 0;}
+.upd-link:hover{color:var(--tx2);}
 </style>
 <script>
 /*! xlsx.js (C) 2013-present SheetJS -- http://sheetjs.com */
@@ -418,6 +441,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   <button class="hbtn" onclick="openModal('addRoom')">＋</button>
   <div class="hdiv"></div>
   <span id="headerMode" style="font-size:12px;opacity:.8;flex:1;"></span>
+  <button class="hbtn" id="updateBtn" onclick="onUpdateBtnClick()" title="バージョンの確認・アプリの更新">🔄 更新</button>
+  <div class="hdiv"></div>
   <button class="hbtn" onclick="openWipeModal()" title="データを消去（年度末・引継ぎ用）" style="background:rgba(220,38,38,.25);border-color:rgba(255,200,200,.4);">🗑 データ消去</button>
 </header>
 
@@ -429,7 +454,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     <button class="stab" onclick="switchTab('group')" id="tab-group">班色</button>
     <button class="stab" onclick="switchTab('cond')" id="tab-cond">条件</button>
     <button class="stab" onclick="switchTab('history')" id="tab-history">履歴</button>
-    <button class="stab" onclick="switchTab('settings')" id="tab-settings">設定<span id="precheckDot" style="display:none;color:#0ea5e9;font-size:9px;vertical-align:super;margin-left:1px;" title="事前に確定した座席があります">🔒</span><span id="backupDot" style="display:none;color:#f59e0b;font-size:9px;vertical-align:super;margin-left:1px;" title="バックアップをおすすめします">●</span></button>
+    <button class="stab" onclick="switchTab('settings')" id="tab-settings">設定<span id="precheckDot" style="display:none;color:#0ea5e9;font-size:9px;vertical-align:super;margin-left:1px;" title="事前に確定した座席があります">🔒</span><span id="updateDot" style="display:none;font-size:9px;vertical-align:super;margin-left:1px;" title="新しいバージョンがあります">🆕</span><span id="backupDot" style="display:none;color:#f59e0b;font-size:9px;vertical-align:super;margin-left:1px;" title="バックアップをおすすめします">●</span></button>
   </div>
   <div class="scontent">
 
@@ -737,6 +762,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <button class="btn btd btn-full" onclick="openWipeModal()">🗑 データ消去メニューを開く</button>
         <p class="fhint" style="margin-top:6px;">履歴のみ／名簿のみ／教室のみ／全データ完全消去 を選んで実行できます。</p>
       </div>
+      <div class="fsec">
+        <div class="ftitle">アプリの更新</div>
+        <div id="updateStatusBox" class="fhint" style="margin-bottom:8px;line-height:1.8;"></div>
+        <button class="btn btw btn-full" id="updateOpenBtn" onclick="openUpdateModal()" style="margin-bottom:6px;display:none;">🆕 更新内容を見る</button>
+        <button class="btn bts btn-full" id="updateCheckBtn" onclick="checkUpdate(true)" style="margin-bottom:8px;">🔄 いま更新を確認する</button>
+        <label class="cb-row">
+          <input type="checkbox" id="updateAutoChk" onchange="saveUpdateAutoPref()">
+          🌐 起動時に自動で更新を確認する
+        </label>
+        <p class="fhint">公開サイトのバージョン情報（version.json）を読みに行くだけです。<b>名簿などのデータが送信されることはありません。</b>インターネットにつながっていないときは何もしません（これまでどおりオフラインで使えます）。</p>
+      </div>
     </div>
 
   </div>
@@ -989,12 +1025,28 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   </div>
 </div>
 
+<!-- アプリの更新モーダル -->
+<div class="modal-overlay" id="modal-update">
+  <div class="modal" style="width:540px;">
+    <div class="mhdr">
+      <div class="mtitle" id="updModalTitle">アプリの更新</div>
+      <button class="mclose" onclick="closeModal('update')">×</button>
+    </div>
+    <div class="mbody" id="updModalBody"></div>
+    <div class="mfoot" id="updModalFoot"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 // ============================================================
 // CONSTANTS
 // ============================================================
+// アプリのバージョン（更新チェックの基準／公開のたびに version.json とそろえて上げる）
+const APP_VERSION = '1.1.0';
+const APP_VERSION_DATE = '2026-09-16';
+
 const SK = 'sekigae_v2';
 const BORDER_COLORS = ['#c62828','#e65100','#f9a825','#2e7d32','#1565c0','#6a1b9a','#00838f','#c2185b'];
 const BG_COLORS_DARK  = ['#e53935','#ff9800','#ffeb3b','#4caf50','#2196f3','#9c27b0','#00bcd4','#f06292'];
@@ -1147,6 +1199,8 @@ window.onload=()=>{
   // バックアップUIの初期化と催促表示
   setupBackupUI();
   updateBackupReminder();
+  // アプリの更新チェック（オフラインなら何もしない）
+  initUpdate();
 };
 
 // ============================================================
@@ -3237,7 +3291,7 @@ function switchTab(name){
   if(name==='layout'){refreshCopyRoomSelect();genderColState={};alternatePhase=0;onGenderEditTypeChange();}
   if(name==='cond'){refreshCondStudentSelects();refreshPinStudentSelect();renderPinList();syncPinSeatMode();renderGrid();}
   if(name==='history'){refreshHistoryFilters();renderHistoryList();}
-  if(name==='settings'){updateBackupReminder();}
+  if(name==='settings'){updateBackupReminder();refreshUpdateUI();}
 }
 
 // ============================================================
@@ -4595,6 +4649,7 @@ function collectBackupExtra(parsed){
     const k = localStorage.key(i);
     if(!k || k === SK) continue;
     if(k === 'sekigae_lastBackup') continue; // バックアップ日時は端末ごとに持つ
+    if(k === UK_CACHE || k === UK_SKIP) continue; // 更新チェックの状態も端末ごと
     if(k.indexOf('sekigae') === 0 && !(k in extra)){
       const v = localStorage.getItem(k);
       if(v != null) extra[k] = v;
@@ -4903,7 +4958,420 @@ function doWipeAll(){
   location.reload();
 }
 
+// ============================================================
+// APP UPDATE — アプリの更新チェック
+// ============================================================
+// 公開サイトに置いた version.json を読み、手元のファイルより新しい版が
+// 出ていればヘッダーの「更新」ボタンの色を変える。ボタンを押すと更新内容
+// （変更点の一覧）を確認したうえで更新できる。
+//
+//  ・サイトから開いている場合 → その場で読み込み直して最新版になる
+//  ・ファイルを直接開いている場合（オフライン版）
+//      → 最新の index.html をその場でダウンロードして差し替える
+//        （名簿などのデータはブラウザ側にあるので引き継がれる）
+//
+// 送信するデータはない（読みに行くだけ）。オフラインなら何もしない。
 
+const UPDATE_MANIFEST_URLS = [
+  'https://edu-tools-jp.github.io/sekigae/version.json',
+  'https://raw.githubusercontent.com/edu-tools-jp/sekigae/main/version.json'
+];
+const UPDATE_DOWNLOAD_URLS = [
+  'https://edu-tools-jp.github.io/sekigae/index.html',
+  'https://raw.githubusercontent.com/edu-tools-jp/sekigae/main/index.html'
+];
+const UPDATE_SITE_URL = 'https://edu-tools-jp.github.io/sekigae/';
+const UK_AUTO  = 'sekigae_updateAuto';   // '0' なら起動時の自動確認オフ
+const UK_CACHE = 'sekigae_updateCache';  // 最後に取得したバージョン情報
+const UK_SKIP  = 'sekigae_updateSkip';   // 通知しないバージョン
+const UPDATE_CHECK_INTERVAL_H = 6;       // 自動確認の間隔（時間）
+
+let updateInfo = null;        // 取得済みのバージョン情報
+let updateChecking = false;   // 確認中フラグ
+let updateBusy = false;       // ダウンロード中フラグ
+let updateView = {state:'info'}; // モーダルの表示状態
+
+// ── バージョン比較（1.2.10 > 1.2.9 になるよう数値で比べる）
+function cmpVer(a, b){
+  const pa = String(a==null?'':a).split(/[.\-+]/).map(n=>parseInt(n,10)||0);
+  const pb = String(b==null?'':b).split(/[.\-+]/).map(n=>parseInt(n,10)||0);
+  const len = Math.max(pa.length, pb.length);
+  for(let i=0;i<len;i++){
+    const x = pa[i]||0, y = pb[i]||0;
+    if(x!==y) return x>y ? 1 : -1;
+  }
+  return 0;
+}
+
+// ── 外部から読み込んだ文字列をそのままHTMLに入れない
+function updEsc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function updAutoOn(){ try{ return localStorage.getItem(UK_AUTO) !== '0'; }catch{ return true; } }
+function saveUpdateAutoPref(){
+  const el = document.getElementById('updateAutoChk');
+  const on = !!(el && el.checked);
+  try{ localStorage.setItem(UK_AUTO, on ? '1' : '0'); }catch{}
+  showToast(on ? '起動時に更新を確認します' : '自動の更新確認をオフにしました');
+}
+function loadUpdateCache(){ try{ const r=localStorage.getItem(UK_CACHE); return r?JSON.parse(r):null; }catch{ return null; } }
+function saveUpdateCache(o){ try{ localStorage.setItem(UK_CACHE, JSON.stringify(o)); }catch{} }
+
+function updateAvailable(){ return !!(updateInfo && updateInfo.latest && cmpVer(updateInfo.latest, APP_VERSION) > 0); }
+function updateSkipped(){ try{ return !!(updateInfo && localStorage.getItem(UK_SKIP) === updateInfo.latest); }catch{ return false; } }
+function newReleases(){
+  if(!updateInfo || !Array.isArray(updateInfo.releases)) return [];
+  return updateInfo.releases
+    .filter(r => r && r.version && cmpVer(r.version, APP_VERSION) > 0)
+    .sort((a,b) => cmpVer(b.version, a.version));
+}
+function updateImportant(){ return newReleases().some(r => r.important === true); }
+
+// 公開サイトから開いているか（＝読み込み直すだけで更新できる）
+function updateIsHosted(){
+  return /^https?:$/.test(location.protocol) && UPDATE_SITE_URL.indexOf(location.origin + '/') === 0;
+}
+
+// ── 起動時
+function initUpdate(){
+  const cache = loadUpdateCache();
+  if(cache && cache.latest) updateInfo = cache;
+  const chk = document.getElementById('updateAutoChk');
+  if(chk) chk.checked = updAutoOn();
+  refreshUpdateUI();
+  if(!updAutoOn()) return;
+  if(navigator.onLine === false) return;           // オフラインなら何もしない
+  const last = (cache && cache.checkedAt) ? new Date(cache.checkedAt).getTime() : 0;
+  if(last && (Date.now() - last) < UPDATE_CHECK_INTERVAL_H*3600*1000) return;
+  setTimeout(()=>{ checkUpdate(false); }, 1500);   // 画面表示を邪魔しないよう少し待つ
+}
+
+// ── 表示の更新（ヘッダーのボタン・設定タブ）
+function refreshUpdateUI(){
+  const avail = updateAvailable();
+  const skipped = updateSkipped();
+  const show = avail && !skipped;
+
+  const btn = document.getElementById('updateBtn');
+  if(btn){
+    if(updateChecking){
+      btn.disabled = true; btn.className = 'hbtn';
+      btn.textContent = '⏳ 確認中…'; btn.title = '更新を確認しています';
+    } else {
+      btn.disabled = false;
+      if(show){
+        btn.className = 'hbtn upd-new' + (updateImportant() ? ' upd-imp' : '');
+        btn.textContent = '🆕 更新があります';
+        btn.title = `新しいバージョン v${updateInfo.latest} が公開されています（押すと更新内容を確認できます）`;
+      } else {
+        btn.className = 'hbtn';
+        btn.textContent = '🔄 更新';
+        btn.title = `現在のバージョン v${APP_VERSION}（押すと最新版が出ていないか確認します）`;
+      }
+    }
+  }
+
+  const dot = document.getElementById('updateDot');
+  if(dot) dot.style.display = show ? '' : 'none';
+  const openBtn = document.getElementById('updateOpenBtn');
+  if(openBtn) openBtn.style.display = avail ? '' : 'none';
+  const chkBtn = document.getElementById('updateCheckBtn');
+  if(chkBtn){ chkBtn.disabled = updateChecking; chkBtn.textContent = updateChecking ? '⏳ 確認中…' : '🔄 いま更新を確認する'; }
+  const autoChk = document.getElementById('updateAutoChk');
+  if(autoChk) autoChk.checked = updAutoOn();
+
+  const box = document.getElementById('updateStatusBox');
+  if(box){
+    const cache = loadUpdateCache();
+    let html = `現在のバージョン：<b>v${updEsc(APP_VERSION)}</b>（${updEsc(APP_VERSION_DATE)}）`;
+    if(avail) html += `<br><span style="color:#92400e;font-weight:700;">🆕 新しいバージョン v${updEsc(updateInfo.latest)} が出ています</span>`;
+    else if(updateInfo && updateInfo.latest) html += `<br>公開中の最新版：v${updEsc(updateInfo.latest)}（お使いのものが最新です）`;
+    else html += `<br>まだ更新を確認していません`;
+    if(cache && cache.checkedAt){
+      const d = new Date(cache.checkedAt);
+      if(!isNaN(d.getTime())){
+        const t = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        html += `<br>最終確認：${t}`;
+      }
+    }
+    if(skipped) html += `<br><span style="color:var(--tx3);">このバージョンの通知はオフにしています</span>`;
+    box.innerHTML = html;
+  }
+}
+
+// ── ヘッダーのボタン
+function onUpdateBtnClick(){
+  if(updateAvailable()) openUpdateModal();
+  else checkUpdate(true);
+}
+
+// ── バージョン情報を取りに行く
+async function fetchWithTimeout(url, ms){
+  const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const timer = ctl ? setTimeout(()=>ctl.abort(), ms) : null;
+  try{
+    const res = await fetch(url, {cache:'no-store', signal: ctl ? ctl.signal : undefined});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    return res;
+  } finally { if(timer) clearTimeout(timer); }
+}
+function cacheBust(url){ return url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now(); }
+
+async function checkUpdate(manual){
+  if(updateChecking) return;
+  updateChecking = true;
+  refreshUpdateUI();
+  let got = null, err = null;
+  for(const base of UPDATE_MANIFEST_URLS){
+    try{
+      const res = await fetchWithTimeout(cacheBust(base), 12000);
+      const j = await res.json();
+      if(j && typeof j.latest === 'string' && j.latest){ got = j; break; }
+      err = new Error('バージョン情報の形式が正しくありません');
+    }catch(e){ err = e; }
+  }
+  updateChecking = false;
+
+  if(got){
+    updateInfo = got;
+    const prev = loadUpdateCache() || {};
+    saveUpdateCache(Object.assign({}, got, {
+      checkedAt: new Date().toISOString(),
+      notifiedVersion: prev.notifiedVersion || ''
+    }));
+    if(manual){
+      // 手動で押したときは、最新でも「最新です」と結果を見せる
+      try{ if(updateAvailable()) localStorage.removeItem(UK_SKIP); }catch{}
+      refreshUpdateUI();
+      openUpdateModal();
+      return;
+    }
+    if(updateAvailable() && !updateSkipped()){
+      const c = loadUpdateCache() || {};
+      if(c.notifiedVersion !== updateInfo.latest){
+        saveUpdateCache(Object.assign({}, c, {notifiedVersion: updateInfo.latest}));
+        showToast(`新しいバージョン v${updateInfo.latest} があります（右上の「更新」）`);
+      }
+    }
+  } else if(manual){
+    showToast('更新を確認できませんでした（インターネットにつながっていない可能性があります）');
+  }
+  refreshUpdateUI();
+}
+
+// ── モーダル
+function openUpdateModal(){
+  if(updateView.state !== 'working') updateView = {state:'info'};
+  renderUpdateModal();
+  openModal('update');
+}
+
+function updRelHtml(){
+  const rels = newReleases();
+  if(!rels.length){
+    return `<p class="fhint">更新内容の詳細は公開サイトでご確認ください。</p>`;
+  }
+  return rels.map(r=>{
+    const items = Array.isArray(r.changes) ? r.changes : [];
+    const li = items.map(c=>`<li>${updEsc(c)}</li>`).join('');
+    return `<div class="upd-rel">
+      <div class="upd-rel-h">
+        <span class="upd-rel-v">v${updEsc(r.version)}</span>
+        ${r.date ? `<span class="upd-rel-d">${updEsc(r.date)}</span>` : ''}
+        ${r.important === true ? `<span class="upd-badge">重要</span>` : ''}
+      </div>
+      ${r.title ? `<div style="font-size:12px;font-weight:600;margin-bottom:4px;">${updEsc(r.title)}</div>` : ''}
+      ${li ? `<ul class="upd-list">${li}</ul>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderUpdateModal(){
+  const body = document.getElementById('updModalBody');
+  const foot = document.getElementById('updModalFoot');
+  const ttl  = document.getElementById('updModalTitle');
+  if(!body || !foot) return;
+  const hosted = updateIsHosted();
+
+  // ダウンロード中
+  if(updateView.state === 'working'){
+    ttl.textContent = '更新しています';
+    body.innerHTML = `<div class="infob">⏳ ${hosted ? '最新版を読み込み直しています…' : '最新版のファイルをダウンロードしています…'}<br>
+      ファイルが大きいので、少し時間がかかることがあります。このまま少しお待ちください。</div>`;
+    foot.innerHTML = '';
+    return;
+  }
+
+  // 保存できた
+  if(updateView.state === 'done'){
+    const v = updateView.version || (updateInfo && updateInfo.latest) || '';
+    ttl.textContent = 'ダウンロードが終わりました';
+    body.innerHTML = `
+      <div class="infob" style="background:#ecfdf5;border-color:#a7f3d0;color:#065f46;">
+        ✅ 新しいバージョン${v ? ` <b>v${updEsc(v)}</b>` : ''} のファイルを保存しました。
+      </div>
+      <div class="ftitle">このあとの手順</div>
+      <div class="upd-steps">
+        ① ダウンロードしたファイル（<b>${updEsc(updateView.fileName || 'index.html')}</b>）を、<br>
+        　 いま使っているファイルと<b>置き換えて</b>ください（同じ場所に上書き、または古いほうを削除）。<br>
+        ② 新しいファイルを開きます。<br>
+        ③ 「設定」タブの「アプリの更新」が <b>v${updEsc(v || '')}</b> になっていれば完了です。
+      </div>
+      <div class="warn-box" style="margin-top:10px;">
+        名簿・座席・履歴などのデータは<b>ファイルではなくブラウザの中</b>に保存されています。<br>
+        ファイルを置き換えても、これまでのデータはそのまま引き継がれます。<br>
+        古いファイルを開くと古い画面が出ます。まちがえないよう、古いファイルは削除してください。
+      </div>`;
+    foot.innerHTML = `<button class="btn btp" onclick="closeModal('update')">閉じる</button>`;
+    return;
+  }
+
+  // 失敗
+  if(updateView.state === 'fail'){
+    ttl.textContent = '更新できませんでした';
+    body.innerHTML = `
+      <div class="warn-box" style="background:#fee2e2;border-color:#fca5a5;color:#991b1b;">
+        ⚠ ${updEsc(updateView.msg || 'ダウンロードに失敗しました')}
+      </div>
+      <p class="fhint">インターネットにつながっているかご確認のうえ、もう一度お試しください。<br>
+      うまくいかないときは、公開サイトを開いて手動で保存することもできます。</p>
+      <button class="btn bts btn-full" style="margin-top:8px;" onclick="window.open('${UPDATE_SITE_URL}','_blank')">🌐 公開サイトを開く</button>`;
+    foot.innerHTML = `<button class="btn bts" onclick="closeModal('update')">閉じる</button>
+      <button class="btn btp" onclick="startUpdate()">もう一度試す</button>`;
+    return;
+  }
+
+  // 通常表示
+  ttl.textContent = 'アプリの更新';
+
+  if(!updateAvailable()){
+    const known = !!(updateInfo && updateInfo.latest);
+    body.innerHTML = `
+      <div class="upd-head">
+        <span class="upd-vchip new">v${updEsc(APP_VERSION)}</span>
+        <span>${known ? 'お使いのバージョンが最新です' : 'バージョン情報をまだ確認していません'}</span>
+      </div>
+      <p class="fhint">公開されている最新版：${known ? 'v'+updEsc(updateInfo.latest) : '未確認'}<br>
+      新しいバージョンが出ると、右上の「更新」ボタンの色が変わってお知らせします。</p>`;
+    foot.innerHTML = `<button class="btn bts" onclick="closeModal('update')">閉じる</button>
+      <button class="btn btp" onclick="checkUpdate(true)">🔄 もう一度確認する</button>`;
+    return;
+  }
+
+  const howTo = hosted
+    ? `「更新する」を押すと、新しいバージョンを読み込み直します（数秒で終わります）。<br>名簿・座席・履歴などのデータはそのまま残ります。`
+    : `「新しいファイルをダウンロード」を押すと、最新の <b>index.html</b> を保存します。<br>
+       保存できたら、いま使っているファイルと置き換えてください。<br>
+       名簿・座席・履歴などのデータは<b>ブラウザの中</b>に保存されているので、そのまま引き継がれます。`;
+
+  body.innerHTML = `
+    <div class="upd-head">
+      <span class="upd-vchip">いま v${updEsc(APP_VERSION)}</span>
+      <span class="upd-arrow">→</span>
+      <span class="upd-vchip new">最新 v${updEsc(updateInfo.latest)}</span>
+      ${updateInfo.releasedAt ? `<span class="upd-rel-d">${updEsc(updateInfo.releasedAt)} 公開</span>` : ''}
+    </div>
+    <div class="ftitle">更新内容</div>
+    ${updRelHtml()}
+    <div class="ftitle" style="margin-top:12px;">更新のしかた</div>
+    <div class="infob">${howTo}</div>
+    <div class="warn-box">
+      心配なときは、先にバックアップを保存しておくと安心です。
+      <button class="btn bts bsm btn-full" style="margin-top:6px;" onclick="exportData()">💾 先にバックアップを保存する</button>
+    </div>`;
+  foot.innerHTML = `
+    <button class="upd-link" style="margin-right:auto;" onclick="skipThisVersion()">このバージョンは通知しない</button>
+    <button class="btn bts" onclick="closeModal('update')">あとで</button>
+    <button class="btn btp" onclick="startUpdate()">${hosted ? '🔄 更新する' : '⬇ 新しいファイルをダウンロード'}</button>`;
+}
+
+function skipThisVersion(){
+  try{ if(updateInfo && updateInfo.latest) localStorage.setItem(UK_SKIP, updateInfo.latest); }catch{}
+  closeModal('update');
+  refreshUpdateUI();
+  showToast('このバージョンの通知をオフにしました（設定タブからいつでも確認できます）');
+}
+
+// ── 更新の実行
+async function startUpdate(){
+  if(updateBusy) return;
+
+  // 公開サイトから開いている場合：キャッシュを更新して読み込み直す
+  if(updateIsHosted()){
+    updateBusy = true;
+    updateView = {state:'working'};
+    renderUpdateModal();
+    try{ await fetch(cacheBust(location.pathname), {cache:'reload'}); }catch{}
+    location.reload();
+    return;
+  }
+
+  // ファイルとして使っている場合：最新の index.html をダウンロード
+  updateBusy = true;
+  updateView = {state:'working'};
+  renderUpdateModal();
+  try{
+    const r = await downloadLatestFile();
+    updateView = {state:'done', version:r.version, fileName:r.fileName};
+  }catch(e){
+    updateView = {state:'fail', msg:(e && e.message) || 'ダウンロードに失敗しました'};
+  }finally{
+    updateBusy = false;
+    renderUpdateModal();
+  }
+}
+
+async function downloadLatestFile(){
+  // 取得先：version.json の指定 → 既定のURL の順に試す
+  const urls = [];
+  if(updateInfo && typeof updateInfo.downloadUrl === 'string' && /^https:\/\//.test(updateInfo.downloadUrl)) urls.push(updateInfo.downloadUrl);
+  UPDATE_DOWNLOAD_URLS.forEach(u=>{ if(urls.indexOf(u) < 0) urls.push(u); });
+
+  let text = null, netErr = null, badFileErr = null;
+  for(const u of urls){
+    try{
+      const res = await fetchWithTimeout(cacheBust(u), 90000);
+      const t = await res.text();
+      // 途中で切れたファイル・エラーページを保存させない
+      if(t.length < 100000 || !/<html/i.test(t) || t.indexOf('</html>') < 0){
+        const e = new Error('ダウンロードしたファイルが不完全でした（通信が途中で切れた可能性があります）');
+        e.badFile = true;
+        throw e;
+      }
+      text = t; break;
+    }catch(e){
+      if(e && e.badFile){ if(!badFileErr) badFileErr = e; }
+      else netErr = e;
+    }
+  }
+  if(text == null){
+    if(badFileErr) throw badFileErr;
+    let m = 'ダウンロードに失敗しました';
+    if(netErr && netErr.name === 'AbortError') m = '時間内にダウンロードできませんでした（通信が遅くなっている可能性があります）';
+    else if(netErr && /^HTTP /.test(netErr.message || '')) m = `公開サイトからファイルを取得できませんでした（${netErr.message}）`;
+    else m = 'インターネットに接続できませんでした';
+    throw new Error(m);
+  }
+
+  // 落としたファイルのバージョンを確認（公開ミスで古いものを上書きしないように）
+  const m = text.match(/const\s+APP_VERSION\s*=\s*'([0-9][0-9A-Za-z.\-]*)'/);
+  const ver = m ? m[1] : '';
+  if(ver && cmpVer(ver, APP_VERSION) <= 0){
+    throw new Error('公開中のファイルがまだ新しくなっていないようです。しばらく待ってから、もう一度お試しください。');
+  }
+
+  const fileName = (updateInfo && typeof updateInfo.fileName === 'string' && updateInfo.fileName) ? updateInfo.fileName : 'index.html';
+  const blob = new Blob([text], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch{} }, 30000);
+  return {version: ver || ((updateInfo && updateInfo.latest) || ''), fileName};
+}
 
 </script>
 <script>
