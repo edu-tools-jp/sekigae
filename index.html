@@ -400,6 +400,16 @@ textarea.fi{resize:vertical;min-height:105px;font-size:12px;line-height:1.6;}
 .upd-steps{font-size:12px;line-height:1.9;}
 .upd-link{background:none;border:none;color:var(--tx3);font-size:11px;font-family:inherit;cursor:pointer;text-decoration:underline;padding:4px 0;}
 .upd-link:hover{color:var(--tx2);}
+
+/* ── バックアップから復元の確認 ───────────────── */
+.rst-sec{border:1px solid var(--bd);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px;}
+.rst-sec.now{border-color:#fca5a5;background:#fff5f5;}
+.rst-sec.now.empty{border-color:var(--bd);background:var(--s2);}
+.rst-h{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--tx3);margin-bottom:6px;}
+.rst-sec.now .rst-h{color:#b91c1c;}
+.rst-row{font-size:12px;line-height:1.8;display:flex;gap:6px;}
+.rst-row b{flex-shrink:0;color:var(--tx2);font-weight:600;min-width:3.6em;}
+.rst-file{font-size:12px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:8px 10px;margin-bottom:10px;word-break:break-all;}
 </style>
 <script>
 /*! xlsx.js (C) 2013-present SheetJS -- http://sheetjs.com */
@@ -754,7 +764,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <button class="btn btp btn-full" id="exportBtn" onclick="exportData()" style="margin-bottom:6px;">📤 ファイルに書き出す（ダウンロード）</button>
         <button class="btn bts btn-full" onclick="document.getElementById('importFile').click()" style="margin-bottom:4px;">📥 バックアップから復元（インポート）</button>
         <input type="file" id="importFile" accept=".json,application/json" style="display:none;" onchange="importData(this)">
-        <p class="fhint">※復元すると現在のデータはすべて上書きされます</p>
+        <p class="fhint">※ファイルを選ぶと、<b>復元する中身</b>と<b>上書きされるデータ</b>を確認する画面が出ます。そこで「今のデータを保存してから復元」も選べます。</p>
       </div>
       <div class="fsec">
         <div class="ftitle">データの消去</div>
@@ -1025,6 +1035,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   </div>
 </div>
 
+<!-- バックアップから復元モーダル -->
+<div class="modal-overlay" id="modal-restore">
+  <div class="modal" style="width:540px;">
+    <div class="mhdr">
+      <div class="mtitle" id="rstModalTitle">バックアップから復元</div>
+      <button class="mclose" onclick="cancelRestore()">×</button>
+    </div>
+    <div class="mbody" id="rstModalBody"></div>
+    <div class="mfoot" id="rstModalFoot"></div>
+  </div>
+</div>
+
 <!-- アプリの更新モーダル -->
 <div class="modal-overlay" id="modal-update">
   <div class="modal" style="width:540px;">
@@ -1044,8 +1066,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 // CONSTANTS
 // ============================================================
 // アプリのバージョン（更新チェックの基準／公開のたびに version.json とそろえて上げる）
-const APP_VERSION = '1.1.0';
-const APP_VERSION_DATE = '2026-09-16';
+const APP_VERSION = '1.2.0';
+const APP_VERSION_DATE = '2026-10-16';
 
 const SK = 'sekigae_v2';
 const BORDER_COLORS = ['#c62828','#e65100','#f9a825','#2e7d32','#1565c0','#6a1b9a','#00838f','#c2185b'];
@@ -4767,6 +4789,13 @@ async function shareBackup(){
   }
 }
 
+// ── バックアップから復元
+// 復元は「いまの端末のデータをすべて置き換える」操作なので、
+// 押し間違いで名簿が消えないよう、必ず確認画面をはさむ。
+// confirm() はiPadで出ないことがあるため、アプリのモーダルで確認する。
+let pendingRestore = null;          // 読み込み済みのバックアップ
+let restoreState = 'confirm';       // confirm / saving
+
 function importData(input){
   const file = input.files[0];
   if(!file){ return; }
@@ -4775,35 +4804,194 @@ function importData(input){
   reader.onload = (e)=>{
     try{
       const obj = JSON.parse(e.target.result);
-
-      // バージョンチェック
-      if(!obj.main){
-        showToast('形式が正しくありません');
+      let parsedMain = null;
+      if(obj && typeof obj.main === 'string'){
+        try{ parsedMain = JSON.parse(obj.main); }catch{}
+      }
+      if(!parsedMain || typeof parsedMain !== 'object' || !parsedMain.classes){
+        showToast('席替えアプリのバックアップファイルではないようです');
         input.value='';
         return;
       }
-
-// confirm省略（iPad対応）
-
-      // メインデータ書き込み
-      localStorage.setItem(SK, obj.main);
-
-      // 付属データ書き込み
-      if(obj.extra){
-        Object.entries(obj.extra).forEach(([k,v])=>{
-          localStorage.setItem(k, v);
-        });
-      }
-
+      pendingRestore = {obj, parsedMain, fileName: file.name};
+      restoreState = 'confirm';
       input.value='';
-      showToast('インポートしました。再読み込みします...');
-      setTimeout(()=>location.reload(), 1200);
+      renderRestoreModal();
+      openModal('restore');
     }catch(err){
-      showToast('読み込みに失敗しました: ' + err.message);
+      showToast('ファイルを読み込めませんでした（壊れている可能性があります）');
       input.value='';
     }
   };
+  reader.onerror = ()=>{ showToast('ファイルを読み込めませんでした'); input.value=''; };
   reader.readAsText(file);
+}
+
+// 中身の要約（クラス・教室・履歴の件数）
+function summarizeBackupData(parsedMain, extra){
+  const classes = Object.values(parsedMain.classes||{}).map(c=>({name:c.name||'(名前なし)', n:(c.students||[]).length}));
+  const rooms = Object.values(parsedMain.rooms||{}).map(r=>r.name||'(名前なし)');
+  let hist = 0;
+  Object.entries(extra||{}).forEach(([k,v])=>{
+    if(k.indexOf('sekigae_hist_')===0){ try{ hist += (JSON.parse(v)||[]).length; }catch{} }
+  });
+  return {classes, rooms, hist};
+}
+function summarizeCurrentData(){
+  const classes = Object.values(app.classes||{}).map(c=>({name:c.name||'(名前なし)', n:(c.students||[]).length}));
+  const rooms = Object.values(app.rooms||{}).map(r=>r.name||'(名前なし)');
+  let hist = 0;
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k && k.indexOf('sekigae_hist_')===0){ try{ hist += (JSON.parse(localStorage.getItem(k))||[]).length; }catch{} }
+  }
+  return {classes, rooms, hist};
+}
+// 消えて困るデータが入っているか（初期状態の空クラスだけなら「なし」とみなす）
+function deviceHasData(sum){
+  const students = sum.classes.reduce((n,c)=>n+c.n, 0);
+  return students>0 || sum.hist>0 || sum.classes.length>1 || sum.rooms.length>1;
+}
+function summaryHtml(sum){
+  const cls = sum.classes.length
+    ? sum.classes.map(c=>`${updEsc(c.name)}（${c.n}名）`).join('、')
+    : '（なし）';
+  return `<div class="rst-row"><b>クラス</b><span>${cls}</span></div>
+    <div class="rst-row"><b>教室</b><span>${sum.rooms.length ? sum.rooms.map(r=>updEsc(r)).join('、') : '（なし）'}</span></div>
+    <div class="rst-row"><b>履歴</b><span>${sum.hist}件</span></div>`;
+}
+
+function renderRestoreModal(){
+  const body = document.getElementById('rstModalBody');
+  const foot = document.getElementById('rstModalFoot');
+  const ttl  = document.getElementById('rstModalTitle');
+  if(!body || !foot || !pendingRestore) return;
+
+  if(restoreState === 'saving'){
+    ttl.textContent = '復元しています';
+    body.innerHTML = `<div class="infob">💾 いまのデータを書き出しました。<br>続けて復元しています。そのままお待ちください…</div>`;
+    foot.innerHTML = '';
+    return;
+  }
+
+  ttl.textContent = 'バックアップから復元';
+  const {obj, parsedMain, fileName} = pendingRestore;
+  const inc = summarizeBackupData(parsedMain, obj.extra);
+  const now = summarizeCurrentData();
+  const hasData = deviceHasData(now);
+
+  let exported = '';
+  if(obj.exportedAt){
+    const d = new Date(obj.exportedAt);
+    if(!isNaN(d.getTime())) exported = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  body.innerHTML = `
+    <div class="rst-file">📄 ${updEsc(fileName)}${exported ? `<br><span style="color:var(--tx3);">書き出した日時：${exported}</span>` : ''}</div>
+    <div class="rst-sec">
+      <div class="rst-h">このファイルから復元される中身</div>
+      ${summaryHtml(inc)}
+    </div>
+    <div class="rst-sec now${hasData ? '' : ' empty'}">
+      <div class="rst-h">${hasData ? '⚠ いまこの端末にあるデータ（消えます）' : 'いまこの端末にあるデータ'}</div>
+      ${hasData ? summaryHtml(now) : `<div class="rst-row"><span>まだ名簿が入っていません。そのまま復元して大丈夫です。</span></div>`}
+    </div>
+    ${hasData ? `<div class="warn-box" style="background:#fee2e2;border-color:#fca5a5;color:#991b1b;">
+      <b>復元すると、いまこの端末にあるデータは消えます。元には戻せません。</b><br>
+      この端末でも席替えアプリを使っていた場合は、「今のデータを保存してから復元」を選んでください。
+    </div>` : ''}`;
+
+  foot.innerHTML = hasData
+    ? `<button class="btn bts" onclick="cancelRestore()">キャンセル</button>
+       <button class="btn btd" onclick="runRestore(false)">保存せずに復元</button>
+       <button class="btn btp" onclick="runRestore(true)">💾 今のデータを保存してから復元</button>`
+    : `<button class="btn bts" onclick="cancelRestore()">キャンセル</button>
+       <button class="btn btp" onclick="runRestore(false)">復元する</button>`;
+}
+
+function cancelRestore(){
+  pendingRestore = null;
+  restoreState = 'confirm';
+  closeModal('restore');
+}
+
+// 復元の直前に、いまのデータをファイルに書き出す
+function saveDataBeforeRestore(){
+  try{
+    const o = buildBackupObject();
+    if(!o) return false;
+    const blob = new Blob([JSON.stringify(o, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `席替えアプリ_復元前バックアップ_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch{} }, 30000);
+    return true;
+  }catch(e){ return false; }
+}
+
+function runRestore(saveFirst){
+  if(!pendingRestore) return;
+  if(saveFirst){
+    if(!saveDataBeforeRestore()){
+      showToast('いまのデータを書き出せませんでした。復元は中止しました');
+      return;
+    }
+    restoreState = 'saving';
+    renderRestoreModal();
+    setTimeout(()=>applyRestore(), 1400); // 書き出しが終わるのを待ってから
+    return;
+  }
+  applyRestore();
+}
+
+// 復元で置き換える対象のキー（端末ごとの設定は残す）
+function clearRestorableKeys(){
+  const keep = {};
+  keep[UK_CACHE] = 1; keep[UK_SKIP] = 1;
+  const del = [];
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(!k || keep[k]) continue;
+    if(k.indexOf('sekigae') === 0 || /^id[0-9a-z]+_id[0-9a-z]+_(cond|pins|gmode|zsplit|precheck)$/.test(k)) del.push(k);
+  }
+  del.forEach(k=>localStorage.removeItem(k));
+}
+
+function applyRestore(){
+  if(!pendingRestore) return;
+  const obj = pendingRestore.obj;
+  // 途中で失敗しても元に戻せるよう、いまの中身を控えておく
+  const snap = {};
+  for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); snap[k] = localStorage.getItem(k); }
+  try{
+    clearRestorableKeys();
+    localStorage.setItem(SK, obj.main);
+    if(obj.extra){
+      Object.entries(obj.extra).forEach(([k,v])=>{
+        if(typeof k === 'string' && typeof v === 'string') localStorage.setItem(k, v);
+      });
+    }
+  }catch(e){
+    try{
+      const now = [];
+      for(let i=0;i<localStorage.length;i++) now.push(localStorage.key(i));
+      now.forEach(k=>{ if(!(k in snap)) localStorage.removeItem(k); });
+      Object.entries(snap).forEach(([k,v])=>localStorage.setItem(k, v));
+    }catch{}
+    pendingRestore = null;
+    restoreState = 'confirm';
+    closeModal('restore');
+    showToast('復元できませんでした（データは元のままです）: ' + (e.message||''));
+    return;
+  }
+  pendingRestore = null;
+  restoreState = 'confirm';
+  showToast('復元しました。再読み込みします...');
+  setTimeout(()=>location.reload(), 1200);
 }
 
 // ============================================================
